@@ -1,0 +1,47 @@
+{
+    "name": "Commerce/Commerce",
+    "type": "library",
+    "description": "Commerce_description",
+    "keywords": [
+        "Commerce",
+        "Commerce"
+    ],
+    "homepage": "https://github.com/:vendor/:package_name",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "budeci",
+            "email": "budeci@gmail.com",
+            "homepage": "website",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "illuminate/support": "~5.1",
+        "php" : "~5.5|~7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit" : "4.*",
+        "scrutinizer/ocular": "~1.1",
+        "squizlabs/php_codesniffer": "~2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Commerce\\Productso\\": "src/",
+            "Commerce\\Productso\\Http\\Controllers\\": "src/Http/Controllers/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Commerce\\Commerce\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0-dev"
+        }
+    }
+}
