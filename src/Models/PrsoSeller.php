@@ -1,28 +1,22 @@
 <?php
 
 namespace Commerce\Productso\Models;
-
-use Kalnoy\Nestedset\Node;
+use Illuminate\Database\Eloquent\Model;
 use Angrydeer\Attachfiles\AttachableTrait;
 use Angrydeer\Attachfiles\AttachableInterface;
 use Request;
 use Sentinel;
 use File;
-use Dimsav\Translatable\Translatable;
 use Carbon\Carbon;
 
-
-class PrsoCategory extends Node implements AttachableInterface
+class PrsoSeller extends Model implements AttachableInterface
 {
     use AttachableTrait;
-    use Translatable;
-    public $translationModel     = 'Commerce\Productso\Models\CategoryTranslation';
 
-    public $translatedAttributes = ['code', 'name', 'description', 'slug'];
-    public $imgPath              = 'images/uploads/categories/';
-
+    public $imgPath  = 'images/uploads/seller/';
+    protected $table = 'prso_seller';
     protected $fillable = [
-        'name', 'slug', '_lft', '_rgt', 'parent_id', 'note', 'desc', 'showhome', 'showside', 'showbottom', 'showcontent',
+        'name', 'slug', 'description', 'views', 'image', 'show', 'published_at'
     ];
 
     public static $productPerPage = 30;
@@ -32,13 +26,19 @@ class PrsoCategory extends Node implements AttachableInterface
         //add full path to image
         return '/'.$this->imgPath.$value;
     }
+    public function setPublishedAtAttribute($value){
+        if (is_null($value)) {
+            $this->attributes['published_at'] = Carbon::now(); 
+        }
+    }
 
     public function setImageAttribute($value)
     {
         //remove file
-        if (is_null($value)) {
+        if (is_null($value) or $value == "") {
 
-            $image = $this->imgPath .$this->attributes['image'];
+            $image = $this->imgPath.$this->attributes['image'];
+            
             if (File::exists($image)) {
                 File::delete($image);
             }
@@ -49,33 +49,41 @@ class PrsoCategory extends Node implements AttachableInterface
         } else { //add file
 
             //get name from path
-            $imageName = last(explode('/', $value));
-
+            if (Request::hasFile('image')) {
+                $extension = Request::file('image')->getClientOriginalExtension();
+            }else{
+                $extension = File::extension($value);
+            }
+            
+            
+            $fileName = md5(time()).'.'.$extension; // renameing image
             //save in field only image name (without upload directory)
-            $this->attributes['image'] = $imageName;
+            if (isset($this->attributes['image']) && !empty($this->attributes['image']) && File::exists($this->imgPath . $this->attributes['image'])) {
+                $fileName = $this->attributes['image'];
+            }
+            
+            $this->attributes['image'] = $fileName;
 
             //move image to a new directory
             if (File::exists($value)) {
-                File::move($value, $this->imgPath . $imageName);
+                File::move($value, $this->imgPath . $fileName);
+               
             }
         }
     }
 
-    public function topCategory(){
+    public function topShop(){
         return $this->orderBy('views','desc')->published();
     }
-    public function getPublished(){
+
+    public function allShop(){
         return $this->published();
     }
-    public function footerCategories(){
-        return $this->where('showfooter',1)->published();
-    }
-    public function homeCategory(){
-        return $this->orderBy('views','desc')->published()->where('showhome',1);
-    }
+
     public function last(){
        return $this->latest()->published();
     }
+
     public function scopePublished($query){
         return $query->where('show',1)->where('published_at','<=',Carbon::now());
     }
@@ -85,13 +93,11 @@ class PrsoCategory extends Node implements AttachableInterface
         return $this->belongsToMany('Commerce\Productso\Models\PrsoProduct');
     }
 
-    public function categoryTranslation()
-    {
-        return $this->hasMany('Commerce\Productso\Models\CategoryTranslation');
-    }
     public function setSlugAttribute($slug)
     {
-      if($slug=='') $slug = str_slug(Request::get('name'));
+
+      if($slug=='') $slug = str_slug(Request::get('name'), "-");
+      else $slug = str_slug($slug, "-");
       if($cat= self::where('slug',$slug)->first()){
           $idmax=self::max('id')+1;
           if(isset($this->attributes['id']))
